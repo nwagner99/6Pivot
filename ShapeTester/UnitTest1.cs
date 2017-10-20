@@ -4,15 +4,13 @@ using _6PivotPolygon.Controllers;
 
 namespace ShapeTester
     {
+    /// <summary>
+    /// Sample of some tests.
+    /// </summary>
     [TestClass]
     public class UnitTest1
         {
         private ShapesProxy _control = new ShapesProxy();
-
-        public UnitTest1()
-            {
-
-            }
 
         [TestMethod]
         public void TestSquare()
@@ -75,6 +73,100 @@ namespace ShapeTester
             Assert.AreEqual(100, retval.radiusX);
             Assert.AreEqual(150, retval.radiusY);
             Assert.AreEqual(Math.PI / 4.0, retval.rotation);
+            }
+
+        [TestMethod]
+        public void TestInvalidInput()
+            {
+            var retval = _control.GetShape(string.Empty);
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            // insufficient input.
+            retval = _control.GetShape("draw an ellipse");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            // Jibberish
+            retval = _control.GetShape("the quick brown fox jumped over the lazy dog's tail");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            // Negative input
+            retval = _control.GetShape("draw a circle with a radius of -100");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            retval = _control.GetShape("draw a circle with a height of 50");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            // Large input
+            retval = _control.GetShape("draw a circle with a radius of 650000000000");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+            }
+
+        [TestMethod]
+        public void TestCommonMistakes()
+            {
+            var retval = _control.GetShape("draw a square with a radius of 100");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            retval = _control.GetShape("draw a ciirle with a radius of 100");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+            }
+
+        [TestMethod]
+        public void TestEquals()
+            {
+            var retval = _control.GetShape("draw a circle with a radius = 100");
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(100, retval.radius);
+            }
+
+        [TestMethod]
+        public void TestParallelogram()
+            {
+            string s = "draw a parallelogram with a height of 200 and a width of 250 and an offset of 25";
+            var retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(4, retval.points.Length);
+            }
+
+        [TestMethod]
+        public void TestRectangle()
+            {
+            string s = "draw an rectangle with a height of 200 and a width of 250";
+            var retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(4, retval.points.Length);
+            }
+
+        [TestMethod]
+        public void TestTriangle()
+            {
+            string s = "draw an isosceles triangle with a height of 200 and a width of 250";
+            var retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(3, retval.points.Length);
+
+            s = "draw an equilateral triangle with a height of 200";
+            retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(3, retval.points.Length);
+
+            s = "draw an equilateral triangle with a width of 200";
+            retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(3, retval.points.Length);
+
+            s = "draw a triangle with a height = 200";
+            retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(3, retval.points.Length);
             }
         }
     }

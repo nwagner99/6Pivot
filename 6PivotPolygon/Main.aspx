@@ -23,13 +23,15 @@
                         ctl.height = result;
                         ctl.width = result;
                         max = result;
+                        ctl = document.getElementById('legend');
+                        ctl.innerText = `Images larger than ${max} x ${max} pixels will be cropped.`;
                     }
                 });
         });
 
         function parseRequest(ctl) {
             var url = 'api/Shapes/GetShape'
-            var ctl2 = document.getElementById('lblErr');
+            var ctl2 = document.getElementById('errMsg');
             ctl2.hidden = true;
             var tb = document.getElementById('tbInput');
             if (!tb.value || tb.value == '') {
@@ -49,7 +51,7 @@
                         }
                         else {
                             if (result.is3d) {
-                                showError("Sorry - I can't draw 3d " + result.type + "s yet.");
+                                showError(`Sorry - I can't draw 3d ${result.type}s yet.`);
                             }
                             else {
                                 if (result.is3d)
@@ -80,13 +82,12 @@
         }
 
         function showError(msg) {
-            var ctl = document.getElementById('lblErr');
-            ctl.innerText = msg;
-            ctl.hidden = false;
+            var ctl2 = document.getElementById('errMsg');
+            ctl2.innerText = msg;
         }
 
         function Draw(obj) {
-            clear();
+            clear(false);
             if (!obj) return;
 
             var c = document.getElementById('output');
@@ -129,13 +130,16 @@
             return { x: parseInt(temp[0].trim()), y: parseInt(temp[1].trim()) };
         }
 
-        function clear() {
+        function clear(input) {
             var c = document.getElementById('output');
             var ctx = c.getContext('2d');
             ctx.clearRect(0, 0, c.width, c.height);
-            c = document.getElementById('lblErr');
+            c = document.getElementById('errMsg');
             c.innerText = '';
-            c.hidden = true;
+            if (input) {
+                $('#tbInput').val('');
+                $('#cmdDraw').prop('disabled', true);
+            }
             return true;
         }
 
@@ -162,38 +166,53 @@
             margin-bottom: 5px;
             padding: 5px;
         }
+
         input {
             margin-top: 5px;
         }
 
         /* remove the border from the error label */
-        #lblErr {
+        #errMsg {
             border: none;
+        }
+
+        #outputDiv {
+            background: linear-gradient(135deg, lightgray, white);
+            border: 2px solid gray;
+        }
+
+        input[type=button], [type=submit] {
+            min-width: 60px;
         }
     </style>
     <form class="form" id="form1" runat="server">
-        <h3>6Pivot Shape Generator</h3>
-        <div id="outputDiv" style="background-color: whitesmoke; border: 2px solid gray">
+        <img src="http://www.sixpivot.com/wp-content/uploads/2015/07/sixpivot.png" alt="SixPivot Logo">
+        <h3>Shape Generator</h3>
+        <div id="outputDiv" style="text-align: left;">
             <canvas id="output"></canvas>
+            <p>
+                <i id="legend" style="font-size: smaller;">Images larger than 500 x 500 pixels will be cropped.</i>
+            </p>
         </div>
         <br />
         <div style="padding-bottom: 5px;">
             <input type="text" id="tbInput" class="form-control" style="max-width: 80%;" onkeyup="chkInput(this);" placeholder="Describe the shape you want to draw..." />
-            <input type="button" id="cmdDraw" class="btn btn-info" value="OK" disabled="disabled" onclick="parseRequest(this);" />
-            <input type="button" id="cmdClear" class="btn btn-info" value="Clear" onclick="return Draw();" />
+            <input type="submit" id="cmdDraw" class="btn btn-info" value="OK" disabled="disabled" onclick="parseRequest(this); return false;" />
+            <input type="button" id="cmdClear" class="btn btn-info" value="Clear" onclick="return clear(true);" />
             <h6>History</h6>
-            <select id="history" style="max-width: 80%; padding-top: 5px" class="form-control" onclick="getHistory(this);"></select>
+            <select id="history" style="max-width: 80%; padding-top: 5px" class="form-control" onchange="getHistory(this);"></select>
             <br />
-            <span id="lblErr" class="form-control" style="color: red; max-width: 80%" hidden="hidden" />
-            <br />
+            <label id="errMsg" class="form-control" style="color: red; max-width: 80%" />
         </div>
-        <footer>
+        <div>
             <p>Examples:</p>
             <p class="tab"><i>Draw a square with a height of 150</i></p>
             <p class="tab"><i>Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45</i></p>
             <p>Notes:</p>
             <p class="tab"><i>The request is not case sensitive.</i></p>
-        </footer>
+            <p class="tab"><i>All values are in pixels.</i></p>
+            <p class="tab"><i>3d coming soon - try "draw 3d [shape]..."</i></p>
+        </div>
     </form>
 </body>
 </html>

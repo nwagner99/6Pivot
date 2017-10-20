@@ -661,6 +661,10 @@ namespace _6PivotPolygon.Controllers
                             height = getMeasurementValue(eParamType.Height);
                             width = getMeasurementValue(eParamType.Width);
                             }
+                        if (height > 0 && width <= 0)
+                            width = height;
+                        else if (width > 0 && height <= 0)
+                            height = width;
                         if (height > 0 && width > 0)
                             {
                             _shape = new Triangle(height, width);
