@@ -95,7 +95,7 @@ namespace _6PivotPolygon.Controllers
         }
 
     /// <summary>
-    /// Covers the n-sided polygons, currently from 5 to 9.
+    /// Covers the n-sided polygons, currently from 5 to 8.
     /// </summary>
     internal class Polygon : Shape
         {
@@ -125,7 +125,7 @@ namespace _6PivotPolygon.Controllers
             JSONShape retval = new Controllers.JSONShape();
             retval.type = string.Format("{0} sided polygon", Sides);
 
-            // Set the origin of the pentagon in the middle of the canvas.
+            // Set the origin of the polygon in the middle of the canvas, since the calculated vertices can go negative.
             origin.X = Properties.Settings.Default.MaxImageSize / 2;
             origin.Y = origin.X;
 
@@ -249,7 +249,8 @@ namespace _6PivotPolygon.Controllers
         }
 
     /// <summary>
-    /// The object returned back from the polygon controller.
+    /// The object returned back from the polygon controller.  This is the object
+    /// that is sent to the client.
     /// </summary>
     public class JSONShape
         {
@@ -292,11 +293,7 @@ namespace _6PivotPolygon.Controllers
         private static List<string> shapeNames = new List<string>();
         private static List<string> measurementNames = new List<string>();
         private static List<string> triTypes = new List<string>();
-
-        public ShapeRequest()
-            {
-
-            }
+        private List<string> allowedTypes = null;
 
         public ShapeRequest(string shType, bool is3d)
             : base()
@@ -375,15 +372,19 @@ namespace _6PivotPolygon.Controllers
             // If we are set the flag, remove it and move on.
             if (wordList.Count > 2)
                 {
+                bool fnd = false;
                 if (wordList[2] == "3d")
                     {
                     is3d = true;
-                    wordList.RemoveAt(2);
-                    words = wordList.ToArray();
+                    fnd = true;
                     }
                 else if (wordList[2] == "2d")
                     {
                     is3d = false;
+                    fnd = true;
+                    }
+                if (fnd)
+                    {
                     wordList.RemoveAt(2);
                     words = wordList.ToArray();
                     }
@@ -444,7 +445,7 @@ namespace _6PivotPolygon.Controllers
                 return null;
                 }
 
-            // At this point we have a number of conjuctive clauses.  Each one must be five words.
+            // At this point we have a number of conjunctive clauses.  Each one must be five words.
             if ((words.Length - index) % 5 != 0)
                 {
                 errMsg = "Sorry - I don't understand this request.";
@@ -527,9 +528,19 @@ namespace _6PivotPolygon.Controllers
         /// <returns>True if it's valid.</returns>
         public bool IsValidMeasurement(string mname)
             {
-            List<string> allowedTypes = new List<string>();
+            // Build the allowed types if required.
+            if (allowedTypes == null) buildAllowedTypes();
 
             if (!measurementNames.Contains(mname)) return false;
+            return allowedTypes.Contains(mname);
+            }
+
+        /// <summary>
+        /// Build the list of allowed measurement types for the current shape type.
+        /// </summary>
+        private void buildAllowedTypes()
+            {
+            allowedTypes = new List<string>();
             switch (ShapeType)
                 {
                 case eShapeType2d.Circle:
@@ -570,13 +581,8 @@ namespace _6PivotPolygon.Controllers
                     allowedTypes.Add("radiusy");
                     allowedTypes.Add("rotation");
                     break;
-                default:
-                    return false;
                 }
-
             if (Is3D) allowedTypes.Add("depth");
-
-            return allowedTypes.Contains(mname);
             }
 
         /// <summary>
