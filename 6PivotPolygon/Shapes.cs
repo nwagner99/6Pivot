@@ -42,6 +42,12 @@ namespace _6PivotPolygon.Controllers
         public Point[] points;
         public bool Is3D = false;
 
+        /// <summary>
+        /// Based on the parameters for the particular shape, create
+        /// the JSON object that will be returned to the client.
+        /// </summary>
+        /// <param name="errMsg"></param>
+        /// <returns></returns>
         abstract public JSONShape Emit(ref string errMsg);
         }
 
@@ -118,10 +124,6 @@ namespace _6PivotPolygon.Controllers
 
         public override JSONShape Emit(ref string errMsg)
             {
-            const double twoPi = Math.PI * 2.0;
-
-            List<Point> _temp = new List<Point>();
-
             JSONShape retval = new Controllers.JSONShape();
             retval.type = string.Format("{0} sided polygon", Sides);
 
@@ -129,18 +131,35 @@ namespace _6PivotPolygon.Controllers
             origin.X = Properties.Settings.Default.MaxImageSize / 2;
             origin.Y = origin.X;
 
-            for (int i = 0; i < Sides; i++)
-                {
-                int x1 = origin.X + (int)Math.Round((Radius * Math.Cos(twoPi * i / Sides)));
-                int y1 = origin.Y + (int)Math.Round((Radius * Math.Sin(twoPi * i / Sides)));
-                _temp.Add(new Point(x1, y1));
-                }
-            retval.points = _temp.ToArray();
+            retval.points = CalcPolygon(origin, Radius, Sides).ToArray();
             retval.radius = Radius;
             retval.sides = Sides;
             retval.status = true;
             retval.is3d = Is3D;
 
+            return retval;
+            }
+
+        /// <summary>
+        /// Calculate the vertices of the given polygon
+        /// </summary>
+        /// <param name="origin">Origin of the shape, since the vertices can go negative.</param>
+        /// <param name="radius">Distince from the origin to a vertex.</param>
+        /// <param name="sides">Number of sides, must be greater than 2</param>
+        /// <returns></returns>
+        public List<Point> CalcPolygon(Point origin, int radius, int sides)
+            {
+            List<Point> retval = new List<Point>();
+            const double twoPi = 2.0 * Math.PI;
+
+            if (radius <= 0 || sides < 3) return null;
+
+            for (int i = 0; i < sides; i++)
+                {
+                int x1 = origin.X + (int)Math.Round((radius * Math.Cos(twoPi * i / sides)));
+                int y1 = origin.Y + (int)Math.Round((radius * Math.Sin(twoPi * i / sides)));
+                retval.Add(new Point(x1, y1));
+                }
             return retval;
             }
         }
@@ -249,7 +268,7 @@ namespace _6PivotPolygon.Controllers
         }
 
     /// <summary>
-    /// The object returned back from the polygon controller.  This is the object
+    /// The object returned back from the shape controller.  This is the object
     /// that is sent to the client.
     /// </summary>
     public class JSONShape
@@ -258,7 +277,7 @@ namespace _6PivotPolygon.Controllers
         public bool is3d = false;
 
         /// <summary>
-        /// If false, then the polygon could not be rendered, and the error message
+        /// If false, then the shape could not be rendered, and the error message
         /// should contain the reason why.
         /// </summary>
         public bool status = false;
@@ -489,7 +508,11 @@ namespace _6PivotPolygon.Controllers
 
         public JSONShape Emit(ref string errMsg)
             {
-            if (_shape == null) return null;
+            if (_shape == null)
+                {
+                errMsg = "no shape defined";
+                return null;
+                }
             return _shape.Emit(ref errMsg);
             }
 
@@ -502,24 +525,6 @@ namespace _6PivotPolygon.Controllers
                 }
             }
 
-        public List<Point> CalcPolygon(int radius, int sides)
-            {
-            List<Point> retval = new List<Point>();
-            const double twoPi = 2.0 * Math.PI;
-
-            // Use these for a moveable origin.
-            int x = 0, y = 0;
-
-            if (radius <= 0 || sides < 3) return null;
-
-            for (int i = 0; i < sides; i++)
-                {
-                int x1 = x + (int)Math.Round((radius * Math.Cos(twoPi * i / sides)));
-                int y1 = y + (int)Math.Round((radius * Math.Sin(twoPi * i / sides)));
-                retval.Add(new Point(x1, y1));
-                }
-            return retval;
-            }
 
         /// <summary>
         /// Is the measurement type valid for this shape.
@@ -742,7 +747,7 @@ namespace _6PivotPolygon.Controllers
         /// with|and a(n) 'measurement' of 'value'
         /// </param>
         /// <param name="errMsg"></param>
-        /// <returns>A decoded measurement</returns>
+        /// <returns>A decoded measurement object</returns>
         public static Measurement Parse(string clause, ref string errMsg)
             {
             Measurement m = null;

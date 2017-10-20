@@ -34,6 +34,7 @@ namespace _6PivotPolygon.Controllers
                 return retval;
                 }
 
+            // Create the shape request.
             var sr = ShapeRequest.Parse(request, ref errMsg);
             if (sr == null) // Couldn't parse the request.
                 {
@@ -43,6 +44,8 @@ namespace _6PivotPolygon.Controllers
             else
                 {
                 retval = sr.Emit(ref errMsg);
+
+                // Although we created the shape, we can't create the response for the client for some reason.
                 if (retval == null) retval = new Controllers.JSONShape() { status = false, errorMessage = errMsg };
                 }
 
