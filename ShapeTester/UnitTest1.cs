@@ -163,6 +163,11 @@ namespace ShapeTester
             Assert.IsTrue(retval.status);
             Assert.AreEqual(3, retval.points.Length);
 
+            s = "draw an equilateral triangle with a height of 200 and a width of 250";
+            retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(3, retval.points.Length);
+
             s = "draw a triangle with a height = 200";
             retval = _control.GetShape(s);
             Assert.IsTrue(retval.status);
