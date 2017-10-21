@@ -9,7 +9,7 @@ using System.Drawing;
 namespace _6PivotPolygon.Controllers
     {
     /// <summary>
-    /// Important:  if this list changes, change the measurement type switch statement in Measurement.Parse()
+    /// A list of supported shape types.
     /// </summary>
     internal enum eShapeType
         {
@@ -327,7 +327,7 @@ namespace _6PivotPolygon.Controllers
             }
         public override JSONShape Emit(ref string errMsg)
             {
-            return new Controllers.JSONShape() { type="cube", status = true, depth = Height, is3d = true };
+            return new Controllers.JSONShape() { type = "cube", status = true, depth = Height, is3d = true };
             }
         }
 
@@ -404,51 +404,10 @@ namespace _6PivotPolygon.Controllers
         public ShapeRequest(string shType)
             : base()
             {
-            switch (shType)
-                {
-                case "triangle":
-                    ShapeType = eShapeType.Triangle;
-                    break;
-                case "square":
-                    ShapeType = eShapeType.Square;
-                    break;
-                case "rectangle":
-                    ShapeType = eShapeType.Rectangle;
-                    break;
-                case "parallelogram":
-                    ShapeType = eShapeType.Parallelogram;
-                    break;
-                case "pentagon":
-                    ShapeType = eShapeType.Pentagon;
-                    break;
-                case "hexagon":
-                    ShapeType = eShapeType.Hexagon;
-                    break;
-                case "heptagon":
-                    ShapeType = eShapeType.Heptagon;
-                    break;
-                case "octagon":
-                    ShapeType = eShapeType.Octagon;
-                    break;
-                case "circle":
-                    ShapeType = eShapeType.Circle;
-                    break;
-                case "oval":
-                    ShapeType = eShapeType.Oval;
-                    break;
-                case "ellipse":
-                    ShapeType = eShapeType.Ellipse;
-                    break;
-                case "cube":
-                    ShapeType = eShapeType.Cube;
-                    break;
-                case "sphere":
-                    ShapeType = eShapeType.Sphere;
-                    break;
-                default:
-                    throw new ArgumentException(string.Format("Unknown shape type ({0})", shType));
-                }
+            if (!shapeNames.Contains(shType)) throw new ArgumentException(string.Format("Unknown shape type ({0})", shType));
+            ShapeType = (eShapeType)shapeNames.IndexOf(shType);
             }
+
         static ShapeRequest()
             {
             // Build a list of names from the enumerated types.
@@ -796,7 +755,7 @@ namespace _6PivotPolygon.Controllers
                         break;
                     case eShapeType.Circle:
                         radius = getMeasurementValue(eParamType.Radius);
-                        if (radius<=0)
+                        if (radius <= 0)
                             {
                             errMsg = "The radius cannot be negative or zero.";
                             return null;
@@ -856,7 +815,7 @@ namespace _6PivotPolygon.Controllers
                         _shape = new Sphere(radius);
                         break;
                     default:
-                        errMsg =string.Format( "Sorry - I can't draw a {0} yet.", ShapeType.ToString());
+                        errMsg = string.Format("Sorry - I can't draw a {0} yet.", ShapeType.ToString());
                         return null;
                     }
 
@@ -886,6 +845,14 @@ namespace _6PivotPolygon.Controllers
         {
         public eParamType parameterType;
         public int Value = 0;
+        private static List<string> _paramNames = null;
+
+        static Measurement()
+            {
+            _paramNames = new List<string>();
+            var names = Enum.GetNames(typeof(eParamType));
+            foreach (var name in names) _paramNames.Add(name.ToLower());
+            }
 
         /// <summary>
         /// Parse a measurement clause into a measurement object.
@@ -917,45 +884,13 @@ namespace _6PivotPolygon.Controllers
                 }
 
             m = new Measurement();
-            switch (words[2])
+            if (!_paramNames.Contains(words[2]))
                 {
-                case "radius":
-                    m.parameterType = eParamType.Radius;
-                    break;
-                case "height":
-                    m.parameterType = eParamType.Height;
-                    break;
-                case "width":
-                    m.parameterType = eParamType.Width;
-                    break;
-                case "side":
-                    m.parameterType = eParamType.Side;
-                    break;
-                case "offset":
-                    m.parameterType = eParamType.Offset;
-                    break;
-                case "radiusx":
-                    m.parameterType = eParamType.RadiusX;
-                    break;
-                case "radiusy":
-                    m.parameterType = eParamType.RadiusY;
-                    break;
-                case "originx":
-                    m.parameterType = eParamType.OriginX;
-                    break;
-                case "originy":
-                    m.parameterType = eParamType.OriginY;
-                    break;
-                case "rotation":
-                    m.parameterType = eParamType.Rotation;
-                    break;
-                case "depth":
-                    m.parameterType = eParamType.Depth;
-                    break;
-                default:
-                    errMsg = string.Format("Sorry - invalid measurement type ({0})", words[2]);
-                    return null;
+                errMsg = string.Format("Unknown measurement type {0}", words[2]);
+                return null;
                 }
+            m.parameterType = (eParamType)_paramNames.IndexOf(words[2]);
+
             if (words[3] != "of" && words[3] != "=")
                 {
                 errMsg = "Sorry - invalid measurement clause";
