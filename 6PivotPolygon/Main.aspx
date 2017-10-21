@@ -7,26 +7,57 @@
     <title>6Pivot Shape Parser</title>
 </head>
 <body>
-    <script src="Scripts/jquery-1.9.1.min.js"></script>
+    <script src="Scripts/jquery-1.12.4.min.js"></script>
     <script src="Scripts/bootstrap.min.js"></script>
+    <script src="Scripts/jquery-ui-1.12.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/87/three.min.js"></script>
     <link href="Content/bootstrap.min.css" rel="stylesheet" />
+    <link href="Content/themes/base/jquery-ui.css" rel="stylesheet" />
+    <link href="Content/themes/base/dialog.css" rel="stylesheet" />
     <script>
         var max = 0;    // Canvas size.
+        var isOpen = false; // Is the help dialog open or closed.
+
         $(document).ready(function () {
             var url = "api/Shapes/Max";
+            $("#dlgHelp").dialog({
+                autoOpen: false,
+                minWidth: 650,
+                minHeight: 350,
+                buttons: [{
+                    text: "OK",
+                    click: function () {
+                        $(this).dialog("close");
+                    }
+                }],
+                close: function (event, ui) {
+                    isOpen = false;
+                },
+                open: function (event, ui) {
+                    isOpen = true;
+                }
+            });
+
             $.ajax(
                 {
                     url: url,
                     success: function (result) {
-                        var ctl = document.getElementById('output');
+                        var ctl = document.getElementById('outputDiv');
                         ctl.height = result;
                         ctl.width = result;
                         max = result;
+                        ctl = document.getElementById('output');
+                        ctl.height = result;
+                        ctl.width = result;
+
                         ctl = document.getElementById('legend');
                         ctl.innerText = `Images larger than ${max} x ${max} pixels will be cropped.`;
                     }
                 });
+
+            //document.getElementById('history').addEventListener('input', function () {
+            //    chkInput();
+            //});
         });
 
         function parseRequest(ctl) {
@@ -61,10 +92,7 @@
                                 // Now add it to the history
                                 var tb = document.getElementById('tbInput')
                                 if (tb.value != '' && !historyContains(tb.value)) {
-                                    var x = document.getElementById('history');
-                                    var opt = document.createElement('option');
-                                    opt.text = tb.value;
-                                    x.add(opt);
+                                    addToHistory(tb.value);
                                 }
                             }
                         }
@@ -76,9 +104,16 @@
         function historyContains(value) {
             var ctl = document.getElementById('history');
             for (var i = 0; i < ctl.options.length; i++) {
-                if (ctl.options[i].innerText == value) return true;
+                if (ctl.options[i].value == value) return true;
             }
             return false;
+        }
+
+        function addToHistory(request) {
+            var x = document.getElementById('history');
+            var opt = document.createElement('option');
+            opt.value = request;
+            x.appendChild(opt);
         }
 
         function showError(msg) {
@@ -87,7 +122,7 @@
         }
 
         function Draw(obj) {
-            clear(false);
+            clearPage(false);
             if (!obj) return;
 
             var c = document.getElementById('output');
@@ -130,7 +165,7 @@
             return { x: parseInt(temp[0].trim()), y: parseInt(temp[1].trim()) };
         }
 
-        function clear(input) {
+        function clearPage(input) {
             var c = document.getElementById('output');
             var ctx = c.getContext('2d');
             ctx.clearRect(0, 0, c.width, c.height);
@@ -151,10 +186,23 @@
         }
 
         function chkInput(ctl) {
+            ctl = document.getElementById('tbInput');
             var ctl2 = document.getElementById('cmdDraw');
             ctl2.disabled = (ctl.value == '');
         }
 
+        // Open or close the help dialog.
+        function showHelp() {
+            var dlg = $('#dlgHelp');
+            if (!isOpen) {
+                dlg.dialog("option", "width", 650);
+                dlg.dialog("option", "height", 350);
+                dlg.dialog('open');
+            }
+            else {
+                dlg.dialog('close');
+            }
+        }
     </script>
     <style>
         .tab {
@@ -186,32 +234,65 @@
         }
     </style>
     <form class="form" id="form1" runat="server">
-        <img src="http://www.sixpivot.com/wp-content/uploads/2015/07/sixpivot.png" alt="SixPivot Logo">
-        <h3>Shape Generator</h3>
-        <div id="outputDiv" style="text-align: left;">
-            <canvas id="output"></canvas>
-            <p>
-                <i id="legend" style="font-size: smaller;">Images larger than 500 x 500 pixels will be cropped.</i>
-            </p>
+        <div>
+            <img style="float: left;" src="http://www.sixpivot.com/wp-content/uploads/2015/07/sixpivot.png" alt="SixPivot Logo">
+            <h2 style="float: left; padding-left: 10px; margin-top: 5px;">Shape Generator</h2>
         </div>
         <br />
+        <br />
+
+        <div id="outputDiv" style="text-align: left;">
+            <canvas id="output"></canvas>
+        </div>
+        <p>
+            <i id="legend" style="font-size: smaller;">Images larger than 500 x 500 pixels will be cropped.</i>
+        </p>
+        <br />
         <div style="padding-bottom: 5px;">
-            <input type="text" id="tbInput" class="form-control" style="max-width: 80%;" onkeyup="chkInput(this);" placeholder="Describe the shape you want to draw..." />
+            <input type="text" id="tbInput" autocomplete="off" list="history" class="form-control" style="max-width: 80%;"
+                onkeyup="chkInput(this);" onchange="chkInput(this)" onfocus="chkInput(this);" placeholder="Describe the shape you want to draw..." />
+            <datalist id="history" onchange="chkInput(this);">
+            </datalist>
             <input type="submit" id="cmdDraw" class="btn btn-info" value="OK" disabled="disabled" onclick="parseRequest(this); return false;" />
-            <input type="button" id="cmdClear" class="btn btn-info" value="Clear" onclick="return clear(true);" />
-            <h6>History</h6>
-            <select id="history" style="max-width: 80%; padding-top: 5px" class="form-control" onchange="getHistory(this);"></select>
+            <input type="button" id="cmdClear" class="btn btn-info" value="Clear" onclick="return clearPage(true);" />
+            <a onclick="showHelp();" href="#" class="glyphicon glyphicon-info-sign"></a>
             <br />
             <label id="errMsg" class="form-control" style="color: red; max-width: 80%" />
         </div>
         <div>
             <p>Examples:</p>
-            <p class="tab"><i>Draw a square with a height of 150</i></p>
-            <p class="tab"><i>Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45</i></p>
+            <p class="tab">
+                <i>Draw a square with a height of 150&nbsp;</i><a class="glyphicon glyphicon-paste" href="#"
+                    onclick="document.getElementById('tbInput').value = 'Draw a square with a height of 150';chkInput(this);"></a>
+            </p>
+            <p class="tab"><i>Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45&nbsp;</i>
+                <a class="glyphicon glyphicon-paste" href="#"
+                    onclick="document.getElementById('tbInput').value = 'Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45';chkInput(this);"></a>
+            </p>
             <p>Notes:</p>
-            <p class="tab"><i>The request is not case sensitive.</i></p>
-            <p class="tab"><i>All values are in pixels.</i></p>
-            <p class="tab"><i>3d coming soon - try "draw 3d [shape]..."</i></p>
+            <p class="tab"><i>Requests are not case sensitive.</i></p>
+            <p class="tab"><i>All measurement values are in pixels, and must be greater than zero.</i></p>
+        </div>
+        <div id="dlgHelp" title="Help">
+            <h4>Syntax</h4>
+            <p>
+                draw a(n) [shape] with a(n) [measurement clause] (and a(n) [measurement clause])
+                <br />
+                Measurement clause: [dimension] of|= [integer value]
+            </p>
+            <h4>Supported Shapes</h4>
+            <p>Circle, Ellipse, Triangle, Square, Rectangle, Parallelogram, Pentagon, Hexagon, Heptagon, Octagon, Cube, Sphere</p>
+            <h4>Supported Dimensions</h4>
+            <p>Radius, Height, Width, Side, Offset, RadiusX, RadiusY, OriginX, OriginY, Rotation, Depth</p>
+            <p>Only Parallelograms use Offset.</p>
+            <p>Only ellipses use RadiusX, RadiusY, OriginX, OriginY and Rotation.</p>
+            <h4>Notes</h4>
+            <p><i>Not every dimension is relevant for every shape.</i></p>
+            <p><i>If you duplicate a dimension, either one may be used.</i></p>
+            <p>
+                <i>Some dimensions may act as synonyms for others.  e.g. </i><b>draw a square with a side of 20</b><i>
+                 is identical to </i><b>draw a square with a height of 20.</b>
+            </p>
         </div>
     </form>
 </body>

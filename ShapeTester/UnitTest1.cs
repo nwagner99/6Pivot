@@ -105,6 +105,14 @@ namespace ShapeTester
             retval = _control.GetShape("draw a circle with a radius of 650000000000");
             Assert.IsTrue(!retval.status);
             Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            retval = _control.GetShape("<script>alert('Hello world.');</script>");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
+
+            retval = _control.GetShape("aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc aaa bbb ccc ");
+            Assert.IsTrue(!retval.status);
+            Assert.IsTrue(!string.IsNullOrEmpty(retval.errorMessage));
             }
 
         [TestMethod]
@@ -125,6 +133,32 @@ namespace ShapeTester
             var retval = _control.GetShape("draw a circle with a radius = 100");
             Assert.IsTrue(retval.status);
             Assert.AreEqual(100, retval.radius);
+            }
+
+        [TestMethod]
+        public void TestWhitespace()
+            {
+            string s = "   draw a circle with a radius of 100";
+            var retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(retval.type, "circle");
+            Assert.AreEqual(retval.radius ,100);
+
+            s = "draw a  circle  with a radius of 100";
+            retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(retval.type , "circle");
+            Assert.AreEqual(retval.radius , 100);
+
+            s = "draw a circle with a radius of 100     ";
+            retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(retval.type ,"circle");
+            Assert.AreEqual(retval.radius ,100);
+
+            s = "draw a\tcircle with\t a radius of 100";
+            retval = _control.GetShape(s);
+            Assert.IsFalse(retval.status);
             }
 
         [TestMethod]

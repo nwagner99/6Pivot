@@ -11,17 +11,10 @@ namespace _6PivotPolygon.Controllers
     /// <summary>
     /// Important:  if this list changes, change the measurement type switch statement in Measurement.Parse()
     /// </summary>
-    internal enum eShapeType2d
+    internal enum eShapeType
         {
-        None, Circle, Oval, Triangle, Square, Rectangle, Parallelogram, Pentagon, Hexagon, Heptagon, Octagon, Ellipse
-        }
-
-    /// <summary>
-    /// Important:  if this list changes, change the measurement type switch statement in Measurement.Parse()
-    /// </summary>
-    internal enum eShapeType3d
-        {
-        None, Cube
+        Circle, Oval, Triangle, Square, Rectangle, Parallelogram, Pentagon, Hexagon, Heptagon, Octagon, Ellipse,
+        Cube, Sphere, Prism
         }
 
     /// <summary>
@@ -40,7 +33,7 @@ namespace _6PivotPolygon.Controllers
     internal abstract class Shape
         {
         public Point[] points;
-        public bool Is3D = false;
+        abstract public bool Is3D { get; }
 
         /// <summary>
         /// Based on the parameters for the particular shape, create
@@ -53,13 +46,20 @@ namespace _6PivotPolygon.Controllers
 
     internal class Square : Shape
         {
-        public int Height, Depth;
+        public int Height;
 
-        public Square(int height, int depth)
+        public Square(int height)
             {
             if (height <= 0) throw new ArgumentException("height cannot be negative or zero");
             Height = height;
-            Depth = depth;
+            }
+
+        public override bool Is3D
+            {
+            get
+                {
+                return false;
+                }
             }
 
         public override JSONShape Emit(ref string errMsg)
@@ -71,7 +71,6 @@ namespace _6PivotPolygon.Controllers
             retval.points = temp.ToArray();
             retval.status = true;
             retval.is3d = Is3D;
-            retval.depth = Depth;
             return retval;
             }
         }
@@ -87,6 +86,13 @@ namespace _6PivotPolygon.Controllers
             Width = width;
             }
 
+        public override bool Is3D
+            {
+            get
+                {
+                return false;
+                }
+            }
         public override JSONShape Emit(ref string errMsg)
             {
             JSONShape retval = new Controllers.JSONShape();
@@ -122,6 +128,13 @@ namespace _6PivotPolygon.Controllers
             Sides = sides;
             }
 
+        public override bool Is3D
+            {
+            get
+                {
+                return false;
+                }
+            }
         public override JSONShape Emit(ref string errMsg)
             {
             JSONShape retval = new Controllers.JSONShape();
@@ -177,6 +190,13 @@ namespace _6PivotPolygon.Controllers
             TriangleType = (Height == Width) ? eTriangleType.Equilateral : eTriangleType.Isosceles;
             }
 
+        public override bool Is3D
+            {
+            get
+                {
+                return false;
+                }
+            }
         public override JSONShape Emit(ref string errMsg)
             {
             JSONShape retval = new Controllers.JSONShape();
@@ -204,6 +224,13 @@ namespace _6PivotPolygon.Controllers
             Offset = offset;
             }
 
+        public override bool Is3D
+            {
+            get
+                {
+                return false;
+                }
+            }
         public override JSONShape Emit(ref string errMsg)
             {
             JSONShape retval = new JSONShape();
@@ -234,6 +261,13 @@ namespace _6PivotPolygon.Controllers
             Rotation = rotation * (Math.PI / 180.0);
             }
 
+        public override bool Is3D
+            {
+            get
+                {
+                return false;
+                }
+            }
         public override JSONShape Emit(ref string errMsg)
             {
             JSONShape retval = new Controllers.JSONShape();
@@ -258,12 +292,66 @@ namespace _6PivotPolygon.Controllers
             Radius = radius;
             }
 
+        public override bool Is3D
+            {
+            get
+                {
+                return false;
+                }
+            }
         public override JSONShape Emit(ref string errMsg)
             {
             JSONShape retval = new Controllers.JSONShape() { type = "circle", radius = Radius };
             retval.status = true;
             retval.is3d = Is3D;
             return retval;
+            }
+        }
+
+    internal class Cube : Shape
+        {
+        private int Height = 0;
+
+        public override bool Is3D
+            {
+            get
+                {
+                return true;
+                }
+            }
+
+        public Cube(int size)
+            {
+            if (size <= 0) throw new ArgumentException("cube size cannot be negative or zero");
+            Height = size;
+            }
+        public override JSONShape Emit(ref string errMsg)
+            {
+            return new Controllers.JSONShape() { type="cube", status = true, depth = Height, is3d = true };
+            }
+        }
+
+    internal class Sphere : Shape
+        {
+        public int Radius = 0;
+
+        public override bool Is3D
+            {
+            get
+                {
+                return true;
+                }
+            }
+
+        public Sphere(int radius)
+            {
+            if (radius <= 0) throw new ArgumentException("radius cannot be negative or zero");
+            Radius = radius;
+            }
+
+        public override JSONShape Emit(ref string errMsg)
+            {
+            return new JSONShape() { type = "sphere", status = true, radius = Radius, is3d = true };
             }
         }
 
@@ -305,63 +393,66 @@ namespace _6PivotPolygon.Controllers
         {
         private Shape _shape;
 
-        public eShapeType2d ShapeType = eShapeType2d.None;
+        public eShapeType ShapeType;
         public List<Measurement> Measurements = new List<Measurement>();
-        public bool Is3D = false;
 
         private static List<string> shapeNames = new List<string>();
         private static List<string> measurementNames = new List<string>();
         private static List<string> triTypes = new List<string>();
         private List<string> allowedTypes = null;
 
-        public ShapeRequest(string shType, bool is3d)
+        public ShapeRequest(string shType)
             : base()
             {
-            Is3D = is3d;
-
             switch (shType)
                 {
                 case "triangle":
-                    ShapeType = eShapeType2d.Triangle;
+                    ShapeType = eShapeType.Triangle;
                     break;
                 case "square":
-                    ShapeType = eShapeType2d.Square;
+                    ShapeType = eShapeType.Square;
                     break;
                 case "rectangle":
-                    ShapeType = eShapeType2d.Rectangle;
+                    ShapeType = eShapeType.Rectangle;
                     break;
                 case "parallelogram":
-                    ShapeType = eShapeType2d.Parallelogram;
+                    ShapeType = eShapeType.Parallelogram;
                     break;
                 case "pentagon":
-                    ShapeType = eShapeType2d.Pentagon;
+                    ShapeType = eShapeType.Pentagon;
                     break;
                 case "hexagon":
-                    ShapeType = eShapeType2d.Hexagon;
+                    ShapeType = eShapeType.Hexagon;
                     break;
                 case "heptagon":
-                    ShapeType = eShapeType2d.Heptagon;
+                    ShapeType = eShapeType.Heptagon;
                     break;
                 case "octagon":
-                    ShapeType = eShapeType2d.Octagon;
+                    ShapeType = eShapeType.Octagon;
                     break;
                 case "circle":
-                    ShapeType = eShapeType2d.Circle;
+                    ShapeType = eShapeType.Circle;
                     break;
                 case "oval":
-                    ShapeType = eShapeType2d.Oval;
+                    ShapeType = eShapeType.Oval;
                     break;
                 case "ellipse":
-                    ShapeType = eShapeType2d.Ellipse;
+                    ShapeType = eShapeType.Ellipse;
+                    break;
+                case "cube":
+                    ShapeType = eShapeType.Cube;
+                    break;
+                case "sphere":
+                    ShapeType = eShapeType.Sphere;
                     break;
                 default:
-                    throw new ArgumentException(string.Format("Invalid shape type ({0})", shType));
+                    throw new ArgumentException(string.Format("Unknown shape type ({0})", shType));
                 }
             }
         static ShapeRequest()
             {
             // Build a list of names from the enumerated types.
-            foreach (var name in Enum.GetNames(typeof(eShapeType2d))) shapeNames.Add(name.ToLower());
+            foreach (var name in Enum.GetNames(typeof(eShapeType))) shapeNames.Add(name.ToLower());
             foreach (var m in Enum.GetNames(typeof(eParamType))) measurementNames.Add(m.ToLower());
             foreach (var t in Enum.GetNames(typeof(eTriangleType))) triTypes.Add(t.ToLower());
             }
@@ -374,136 +465,130 @@ namespace _6PivotPolygon.Controllers
         /// <returns>A shape request or null on error.</returns>
         public static ShapeRequest Parse(string request, ref string errMsg)
             {
-            ShapeRequest retval = null;
-            bool is3d = false;
-
-            // First token is the request
-            string[] words = request.ToLower().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            // Use this to check for 3d
-            List<string> wordList = words.ToList();
-
-            string shape = string.Empty;
-            string triangleType = string.Empty;
-            List<Measurement> measurements = new List<Measurement>();
-
-            // First, check if we are rendering a 3d shape - wordList[2] = 3d
-            // If we are set the flag, remove it and move on.
-            if (wordList.Count > 2)
+            try
                 {
-                bool fnd = false;
-                if (wordList[2] == "3d")
+
+                ShapeRequest retval = null;
+
+                // First token is the request
+                string[] words = request.ToLower().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                // Use this to check for 3d
+                List<string> wordList = words.ToList();
+
+                string shape = string.Empty;
+                string triangleType = string.Empty;
+                List<Measurement> measurements = new List<Measurement>();
+
+                // Set to 3 or 4 if we are drawing a triangle (two words).
+                int index = 3;
+
+                // The first word must be 'draw'.
+                if (words.Length == 0)
                     {
-                    is3d = true;
-                    fnd = true;
-                    }
-                else if (wordList[2] == "2d")
-                    {
-                    is3d = false;
-                    fnd = true;
-                    }
-                if (fnd)
-                    {
-                    wordList.RemoveAt(2);
-                    words = wordList.ToArray();
-                    }
-                }
-
-            // Set to 3 or 4 if we are drawing a triangle (two words).
-            int index = 3;
-
-            // The first word must be 'draw'.
-            if (words.Length == 0)
-                {
-                errMsg = "empty request";
-                return null;
-                }
-
-            // We need at least eight words.
-            if (words.Length < 8)
-                {
-                errMsg = "incomplete request";
-                return null;
-                }
-
-            // First word 'draw'
-            if (words[0] != "draw")
-                {
-                errMsg = string.Format("Sorry - I can't '{0}', I can only draw.", words[0]);
-                return null;
-                }
-
-            // A or an
-            if (words[1] != "a" && words[1] != "an")
-                {
-                errMsg = string.Format("Sorry - I don't understand {0}", words[1]);
-                return null;
-                }
-
-            // Shape
-            // Are we drawing a triangle?
-            if (triTypes.Contains(words[2]))
-                {
-                if (words[3] != "triangle")
-                    {
-                    errMsg = string.Format("Sorry - I don't know how to draw a {0} {1}", words[2], words[3]);
-                    return null;
-                    }
-                triangleType = words[2];
-                shape = words[3];
-                index = 4;
-                }
-            else
-                {
-                shape = words[2];
-                }
-
-            if (!shapeNames.Contains(shape))
-                {
-                errMsg = string.Format("Sorry - I can't draw a {0}", shape);
-                return null;
-                }
-
-            // At this point we have a number of conjunctive clauses.  Each one must be five words.
-            if ((words.Length - index) % 5 != 0)
-                {
-                errMsg = "Sorry - I don't understand this request.";
-                return null;
-                }
-
-            // Create the request and set the shape type
-            retval = new ShapeRequest(shape, is3d);
-
-            // Now we can parse the measurement parameters.
-            for (int i = index; i < words.Length; i += 5)
-                {
-                System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                for (int j = i; j < i + 5; j++)
-                    {
-                    sb.Append(words[j] + " ");
-                    }
-                var m = Measurement.Parse(sb.ToString(), ref errMsg);
-                if (m == null) return null;
-
-                // See if it is approprate, and not a duplicate.
-                var qry = from _m in measurements where _m.parameterType == m.parameterType select _m;
-                if (qry != null && qry.Count() > 0)
-                    {
-                    errMsg = string.Format("Sorry - duplicate measurement type ({0})", m.parameterType.ToString());
-                    }
-
-                if (!retval.IsValidMeasurement(m.parameterType.ToString().ToLower()))
-                    {
-                    errMsg = string.Format("Sorry - invalid measurement type ({0}) for {1}", m.parameterType.ToString(), retval.ShapeType.ToString());
+                    errMsg = "empty request";
                     return null;
                     }
 
-                measurements.Add(m);
-                }
+                // We need at least eight words.
+                if (words.Length < 8)
+                    {
+                    errMsg = "incomplete request";
+                    return null;
+                    }
 
-            retval.Measurements = measurements;
-            if (retval.CreateShape(ref errMsg) == null) return null;
-            return retval;
+                // First word 'draw'
+                if (words[0] != "draw")
+                    {
+                    errMsg = string.Format("Sorry - I can't '{0}', I can only draw.", words[0]);
+                    return null;
+                    }
+
+                // A or an
+                if (words[1] != "a" && words[1] != "an")
+                    {
+                    errMsg = string.Format("Sorry - I don't understand {0}", words[1]);
+                    return null;
+                    }
+
+                // Shape
+                // Are we drawing a triangle?
+                if (triTypes.Contains(words[2]))
+                    {
+                    if (words[3] != "triangle")
+                        {
+                        errMsg = string.Format("Sorry - I don't know how to draw a {0} {1}", words[2], words[3]);
+                        return null;
+                        }
+                    triangleType = words[2];
+                    shape = words[3];
+                    index = 4;
+                    }
+                else
+                    {
+                    shape = words[2];
+                    }
+
+                if (!shapeNames.Contains(shape))
+                    {
+                    errMsg = string.Format("Sorry - I can't draw a {0}", shape);
+                    return null;
+                    }
+
+                // At this point we have a number of conjunctive clauses.  Each one must be five words.
+                if ((words.Length - index) % 5 != 0)
+                    {
+                    errMsg = "Sorry - I don't understand this request.";
+                    return null;
+                    }
+
+                // Create the request and set the shape type
+                try
+                    {
+                    retval = new ShapeRequest(shape);
+                    }
+                catch (ArgumentException e)
+                    {
+                    errMsg = e.Message;
+                    return null;
+                    }
+
+                // Now we can parse the measurement parameters.
+                for (int i = index; i < words.Length; i += 5)
+                    {
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    for (int j = i; j < i + 5; j++)
+                        {
+                        sb.Append(words[j] + " ");
+                        }
+                    var m = Measurement.Parse(sb.ToString(), ref errMsg);
+                    if (m == null) return null;
+
+                    // See if it is approprate, and not a duplicate.
+                    var qry = from _m in measurements where _m.parameterType == m.parameterType select _m;
+                    if (qry != null && qry.Count() > 0)
+                        {
+                        errMsg = string.Format("Sorry - duplicate measurement type ({0})", m.parameterType.ToString());
+                        }
+
+                    if (!retval.IsValidMeasurement(m.parameterType.ToString().ToLower()))
+                        {
+                        errMsg = string.Format("Sorry - invalid measurement type ({0}) for {1}", m.parameterType.ToString(), retval.ShapeType.ToString());
+                        return null;
+                        }
+
+                    measurements.Add(m);
+                    }
+
+                retval.Measurements = measurements;
+                if (retval.CreateShape(ref errMsg) == null) return null;
+                return retval;
+                }
+            catch (Exception ex)
+                {
+                errMsg = ex.Message;
+                return null;
+                }
             }
 
         public JSONShape Emit(ref string errMsg)
@@ -520,8 +605,8 @@ namespace _6PivotPolygon.Controllers
             {
             get
                 {
-                return ShapeType == eShapeType2d.Heptagon || ShapeType == eShapeType2d.Hexagon ||
-                    ShapeType == eShapeType2d.Octagon || ShapeType == eShapeType2d.Pentagon;
+                return ShapeType == eShapeType.Heptagon || ShapeType == eShapeType.Hexagon ||
+                    ShapeType == eShapeType.Octagon || ShapeType == eShapeType.Pentagon;
                 }
             }
 
@@ -548,46 +633,54 @@ namespace _6PivotPolygon.Controllers
             allowedTypes = new List<string>();
             switch (ShapeType)
                 {
-                case eShapeType2d.Circle:
+                case eShapeType.Circle:
                     allowedTypes.Add("radius");
                     break;
-                case eShapeType2d.Heptagon:
-                case eShapeType2d.Hexagon:
-                case eShapeType2d.Octagon:
-                case eShapeType2d.Pentagon:
+                case eShapeType.Heptagon:
+                case eShapeType.Hexagon:
+                case eShapeType.Octagon:
+                case eShapeType.Pentagon:
                     allowedTypes.Add("radius");
                     allowedTypes.Add("side");
                     break;
-                case eShapeType2d.Oval:
+                case eShapeType.Oval:
                     break;
-                case eShapeType2d.Parallelogram:
+                case eShapeType.Parallelogram:
                     allowedTypes.Add("height");
                     allowedTypes.Add("width");
                     allowedTypes.Add("offset");
                     break;
-                case eShapeType2d.Rectangle:
+                case eShapeType.Rectangle:
                     allowedTypes.Add("height");
                     allowedTypes.Add("width");
                     break;
-                case eShapeType2d.Square:
-                    allowedTypes.Add("height");
-                    allowedTypes.Add("width");
-                    allowedTypes.Add("side");
-                    break;
-                case eShapeType2d.Triangle:
+                case eShapeType.Square:
                     allowedTypes.Add("height");
                     allowedTypes.Add("width");
                     allowedTypes.Add("side");
                     break;
-                case eShapeType2d.Ellipse:
+                case eShapeType.Triangle:
+                    allowedTypes.Add("height");
+                    allowedTypes.Add("width");
+                    allowedTypes.Add("side");
+                    break;
+                case eShapeType.Ellipse:
                     allowedTypes.Add("originx");
                     allowedTypes.Add("originy");
                     allowedTypes.Add("radiusx");
                     allowedTypes.Add("radiusy");
                     allowedTypes.Add("rotation");
                     break;
+                case eShapeType.Cube:
+                    allowedTypes.Add("height");
+                    allowedTypes.Add("width");
+                    allowedTypes.Add("side");
+                    allowedTypes.Add("depth");
+                    break;
+                case eShapeType.Sphere:
+                    allowedTypes.Add("radius");
+                    break;
                 }
-            if (Is3D) allowedTypes.Add("depth");
             }
 
         /// <summary>
@@ -614,20 +707,20 @@ namespace _6PivotPolygon.Controllers
             try
                 {
 
-                int height, width, radius, sides = 0, offset, depth = 0;
+                int height, width, radius, sides = 0, offset;
                 int rx, ry, ox, oy;
 
+                // Create the shape with the given measurements.
+                // We should try and be a bit flexible with the specific measurement types.
                 switch (ShapeType)
                     {
-                    case eShapeType2d.Square:
+                    case eShapeType.Square:
                         height = getMeasurementValue(eParamType.Height);
-                        if (Is3D) depth = getMeasurementValue(eParamType.Depth);
-                        if (depth < 0) depth = 0;
                         if (height <= 0) height = getMeasurementValue(eParamType.Width);
                         if (height <= 0) height = getMeasurementValue(eParamType.Side);
                         if (height >= 0)
                             {
-                            _shape = new Square(height, depth);
+                            _shape = new Square(height);
                             }
                         else
                             {
@@ -635,15 +728,15 @@ namespace _6PivotPolygon.Controllers
                             return null;
                             }
                         break;
-                    case eShapeType2d.Pentagon:
-                    case eShapeType2d.Hexagon:
-                    case eShapeType2d.Heptagon:
-                    case eShapeType2d.Octagon:
-                        if (ShapeType == eShapeType2d.Pentagon)
+                    case eShapeType.Pentagon:
+                    case eShapeType.Hexagon:
+                    case eShapeType.Heptagon:
+                    case eShapeType.Octagon:
+                        if (ShapeType == eShapeType.Pentagon)
                             sides = 5;
-                        else if (ShapeType == eShapeType2d.Hexagon)
+                        else if (ShapeType == eShapeType.Hexagon)
                             sides = 6;
-                        else if (ShapeType == eShapeType2d.Heptagon)
+                        else if (ShapeType == eShapeType.Heptagon)
                             sides = 7;
                         else
                             sides = 8;
@@ -656,11 +749,16 @@ namespace _6PivotPolygon.Controllers
                         if (radius <= 0)
                             {
                             int slen = getMeasurementValue(eParamType.Side);
+                            if (slen <= 0)
+                                {
+                                errMsg = string.Format("You must specify a radius or side length.");
+                                return null;
+                                }
                             radius = (int)Math.Round(calcRadius(slen, sides));
                             }
                         _shape = new Polygon(radius, sides);
                         break;
-                    case eShapeType2d.Triangle:
+                    case eShapeType.Triangle:
                         sides = getMeasurementValue(eParamType.Side);
                         if (sides > 0)
                             {
@@ -686,22 +784,38 @@ namespace _6PivotPolygon.Controllers
                             return null;
                             }
                         break;
-                    case eShapeType2d.Rectangle:
+                    case eShapeType.Rectangle:
                         height = getMeasurementValue(eParamType.Height);
                         width = getMeasurementValue(eParamType.Width);
                         _shape = new Rectangle(height, width);
                         break;
-                    case eShapeType2d.Circle:
+                    case eShapeType.Circle:
                         radius = getMeasurementValue(eParamType.Radius);
                         _shape = new Circle(radius);
                         break;
-                    case eShapeType2d.Parallelogram:
+                    case eShapeType.Parallelogram:
                         height = getMeasurementValue(eParamType.Height);
                         width = getMeasurementValue(eParamType.Width);
                         offset = getMeasurementValue(eParamType.Offset);
+                        if (height <= 0)
+                            {
+                            errMsg = "Height is either missing, negative or zero.";
+                            return null;
+                            }
+                        if (width <= 0)
+                            {
+                            errMsg = "Width is either missing, negative or zero.";
+                            return null;
+                            }
+                        if (offset <= 0)
+                            {
+                            errMsg = "Offset is either missing, negative or zero.";
+                            return null;
+                            }
+
                         _shape = new Parallelogram(height, width, offset);
                         break;
-                    case eShapeType2d.Ellipse:
+                    case eShapeType.Ellipse:
                         rx = getMeasurementValue(eParamType.RadiusX);
                         ry = getMeasurementValue(eParamType.RadiusY);
                         ox = getMeasurementValue(eParamType.OriginX);
@@ -710,9 +824,32 @@ namespace _6PivotPolygon.Controllers
                         if (rot < 0) rot = 0;
                         _shape = new Ellipse(ox, oy, rx, ry, rot);
                         break;
+                    case eShapeType.Cube:
+                        height = getMeasurementValue(eParamType.Height);
+                        if (height <= 0) height = getMeasurementValue(eParamType.Width);
+                        if (height <= 0) height = getMeasurementValue(eParamType.Depth);
+                        if (height <= 0) height = getMeasurementValue(eParamType.Side);
+                        if (height <= 0)
+                            {
+                            errMsg = "You must specify a cube size.";
+                            return null;
+                            }
+                        _shape = new Cube(height);
+                        break;
+                    case eShapeType.Sphere:
+                        radius = getMeasurementValue(eParamType.Radius);
+                        if (radius <= 0)
+                            {
+                            errMsg = "the radius cannot be negative or zero";
+                            return null;
+                            }
+                        _shape = new Sphere(radius);
+                        break;
+                    default:
+                        errMsg =string.Format( "Sorry - I can't draw a {0} yet.", ShapeType.ToString());
+                        return null;
                     }
 
-                if (_shape != null) _shape.Is3D = Is3D;
                 return _shape;
                 }
             catch (Exception ex)
@@ -760,7 +897,7 @@ namespace _6PivotPolygon.Controllers
                 }
             if (words[0] != "with" && words[0] != "and")
                 {
-                errMsg = string.Format("Sorry - invalid conjuctive ({0})", words[0]);
+                errMsg = string.Format("Sorry - invalid conjunctive ({0})", words[0]);
                 return null;
                 }
             if (words[1] != "a" && words[1] != "an")

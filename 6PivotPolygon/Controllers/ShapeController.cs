@@ -8,7 +8,7 @@ using System.Drawing;
 
 namespace _6PivotPolygon.Controllers
     {
-   
+
 
     public class ShapesController : ApiController
         {
@@ -29,7 +29,15 @@ namespace _6PivotPolygon.Controllers
 
             if (string.IsNullOrEmpty(request))
                 {
-                retval.errorMessage= "Sorry - please enter a shape request.";
+                retval.errorMessage = "Sorry - please enter a shape request.";
+                retval.status = false;
+                return retval;
+                }
+
+            // Do some sanity checking.
+            if (request.Length > 200 || !isValidInput(request))
+                {
+                retval.errorMessage = "Invalid request.";
                 retval.status = false;
                 return retval;
                 }
@@ -50,6 +58,11 @@ namespace _6PivotPolygon.Controllers
                 }
 
             return retval;
+            }
+
+        private static bool isValidInput(string request)
+            {
+            return request.All(x => x == '=' || char.IsLetterOrDigit(x) || char.IsWhiteSpace(x));
             }
         }
 
