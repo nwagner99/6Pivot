@@ -291,7 +291,7 @@
         </p>
         <br />
         <div style="padding-bottom: 5px;">
-            <input type="text" id="tbInput" autocomplete="off" list="history" class="form-control" style="max-width: 80%;"
+            <input type="text" id="tbInput" list="history" class="form-control" style="max-width: 80%;"
                 onkeyup="chkInput(this);" onchange="chkInput(this)" onfocus="chkInput(this);" placeholder="Describe the shape you want to draw..." />
             <datalist id="history" onchange="chkInput(this);">
             </datalist>

@@ -787,10 +787,20 @@ namespace _6PivotPolygon.Controllers
                     case eShapeType.Rectangle:
                         height = getMeasurementValue(eParamType.Height);
                         width = getMeasurementValue(eParamType.Width);
+                        if (height <= 0 || width <= 0)
+                            {
+                            errMsg = "Both the height and width must be greater than zero.";
+                            return null;
+                            }
                         _shape = new Rectangle(height, width);
                         break;
                     case eShapeType.Circle:
                         radius = getMeasurementValue(eParamType.Radius);
+                        if (radius<=0)
+                            {
+                            errMsg = "The radius cannot be negative or zero.";
+                            return null;
+                            }
                         _shape = new Circle(radius);
                         break;
                     case eShapeType.Parallelogram:
@@ -897,7 +907,7 @@ namespace _6PivotPolygon.Controllers
                 }
             if (words[0] != "with" && words[0] != "and")
                 {
-                errMsg = string.Format("Sorry - invalid conjunctive ({0})", words[0]);
+                errMsg = string.Format("Sorry - invalid conjunction ({0})", words[0]);
                 return null;
                 }
             if (words[1] != "a" && words[1] != "an")
