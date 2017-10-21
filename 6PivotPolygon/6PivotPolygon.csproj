@@ -145,6 +145,7 @@
     <Content Include="Scripts\jquery-1.12.4.min.js" />
     <Content Include="Scripts\jquery-ui-1.12.1.js" />
     <Content Include="Scripts\jquery-ui-1.12.1.min.js" />
+    <Content Include="Scripts\pinhole.js" />
     <Content Include="Scripts\three.js" />
     <Content Include="Web.config" />
   </ItemGroup>

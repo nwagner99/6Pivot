@@ -10,10 +10,10 @@
     <script src="Scripts/jquery-1.12.4.min.js"></script>
     <script src="Scripts/bootstrap.min.js"></script>
     <script src="Scripts/jquery-ui-1.12.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/87/three.min.js"></script>
     <link href="Content/bootstrap.min.css" rel="stylesheet" />
     <link href="Content/themes/base/jquery-ui.css" rel="stylesheet" />
     <link href="Content/themes/base/dialog.css" rel="stylesheet" />
+    <script src="Scripts/pinhole.js"></script>
     <script>
         var max = 0;    // Canvas size.
         var isOpen = false; // Is the help dialog open or closed.
@@ -70,6 +70,7 @@
                 ctl2.hidden = false;
                 return false;
             }
+
             // Now get the coordinates.
             $.ajax(
                 {
@@ -82,19 +83,24 @@
                         }
                         else {
                             if (result.is3d) {
-                                showError(`Sorry - I can't draw 3d ${result.type}s yet.`);
-                            }
-                            else {
-                                if (result.is3d)
-                                    Draw3D(result);
-                                else
-                                    Draw(result);
-                                // Now add it to the history
-                                var tb = document.getElementById('tbInput')
-                                if (tb.value != '' && !historyContains(tb.value)) {
-                                    addToHistory(tb.value);
+                                clearPage(false);
+                                switch (result.type) {
+                                    case 'cube':
+                                        drawCube(result.depth);
+                                        break;
+                                    case 'sphere':
+                                        drawSphere(result.radius);
+                                        break;
+                                    default:
+                                        showError(`Sorry - I can't draw 3d ${result.type}s yet.`);
                                 }
                             }
+                            else {
+                                Draw(result);
+                            }
+                            // Now add it to the history
+                            var tb = document.getElementById('tbInput')
+                            if (tb.value != '' && !historyContains(tb.value)) addToHistory(tb.value);
                         }
                     }
                 });
@@ -156,10 +162,6 @@
             ctx.stroke();
         }
 
-        function Draw3D(obj) {
-            // Nothing to do yet.
-        }
-
         function parsePoint(pt) {
             var temp = pt.split(',');
             return { x: parseInt(temp[0].trim()), y: parseInt(temp[1].trim()) };
@@ -203,7 +205,47 @@
                 dlg.dialog('close');
             }
         }
+
+        function drawCube(size) {
+            var canvas = document.getElementById('output');
+            var x = (size / max) / 2.0;
+            var p = new Pinhole();
+            p.drawCube(-x, -x, -x, x, x, x);
+            p.rotate(Math.PI / 2, Math.PI / 6, 0);
+            p.render(canvas, { bgColor: 'whitesmoke', lineWidth: 0.5 });
+        }
+
+        function drawSphere(radius) {
+            var canvas = document.getElementById('output');
+            var r = 0;
+            var p = new Pinhole();
+            var x = radius / max;
+
+            // Now scale the lines to try and get a smoother curve.
+            if (x >= 0.5) p.circleSteps = 90;
+
+            for (var i = 0; i < 4; i++) {
+                p.begin();
+                p.drawCircle(0, 0, 0, x);
+                if (r > 0) p.rotate(0, r, 0);
+                p.end();
+                r += Math.PI / 4.0;
+            }
+            r = 0;
+            for (var i = 0; i < 4; i++) {
+                p.begin();
+                p.drawCircle(0, 0, 0, x);
+                if (r > 0) p.rotate(r, 0, 0);
+                p.end();
+                r += Math.PI / 4.0;
+            }
+            // Rotate the sphere to get some perspective.
+            p.rotate(0, 0, Math.PI/6.0);
+            p.render(canvas, { bgColor: 'whitesmoke', lineWidth: 0.5 });
+        }
+
     </script>
+
     <style>
         .tab {
             margin-left: 25px;
@@ -265,7 +307,8 @@
                 <i>Draw a square with a height of 150&nbsp;</i><a class="glyphicon glyphicon-paste" href="#"
                     onclick="document.getElementById('tbInput').value = 'Draw a square with a height of 150';chkInput(this);"></a>
             </p>
-            <p class="tab"><i>Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45&nbsp;</i>
+            <p class="tab">
+                <i>Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45&nbsp;</i>
                 <a class="glyphicon glyphicon-paste" href="#"
                     onclick="document.getElementById('tbInput').value = 'Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45';chkInput(this);"></a>
             </p>
@@ -275,11 +318,8 @@
         </div>
         <div id="dlgHelp" title="Help">
             <h4>Syntax</h4>
-            <p>
-                draw a(n) [shape] with a(n) [measurement clause] (and a(n) [measurement clause])
-                <br />
-                Measurement clause: [dimension] of|= [integer value]
-            </p>
+            <p>draw a(n) [shape] with a(n) [measurement clause] (and a(n) [measurement clause])</p>
+            <p>Measurement clause: [dimension] of|= [integer value]</p>
             <h4>Supported Shapes</h4>
             <p>Circle, Ellipse, Triangle, Square, Rectangle, Parallelogram, Pentagon, Hexagon, Heptagon, Octagon, Cube, Sphere</p>
             <h4>Supported Dimensions</h4>

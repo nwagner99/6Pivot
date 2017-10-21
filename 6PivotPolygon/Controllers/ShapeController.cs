@@ -24,40 +24,47 @@ namespace _6PivotPolygon.Controllers
         [HttpGet]
         public JSONShape GetShape(string request)
             {
-            string errMsg = string.Empty;
-            JSONShape retval = new Controllers.JSONShape();
-
-            if (string.IsNullOrEmpty(request))
+            try
                 {
-                retval.errorMessage = "Sorry - please enter a shape request.";
-                retval.status = false;
+                string errMsg = string.Empty;
+                JSONShape retval = new Controllers.JSONShape();
+
+                if (string.IsNullOrEmpty(request))
+                    {
+                    retval.errorMessage = "Sorry - please enter a shape request.";
+                    retval.status = false;
+                    return retval;
+                    }
+
+                // Do some sanity checking.
+                if (request.Length > 200 || !isValidInput(request))
+                    {
+                    retval.errorMessage = "Invalid request.";
+                    retval.status = false;
+                    return retval;
+                    }
+
+                // Create the shape request.
+                var sr = ShapeRequest.Parse(request, ref errMsg);
+                if (sr == null) // Couldn't parse the request.
+                    {
+                    retval.status = false;
+                    retval.errorMessage = errMsg;
+                    }
+                else
+                    {
+                    retval = sr.Emit(ref errMsg);
+
+                    // Although we created the shape, we can't create the response for the client for some reason.
+                    if (retval == null) retval = new Controllers.JSONShape() { status = false, errorMessage = errMsg };
+                    }
+
                 return retval;
                 }
-
-            // Do some sanity checking.
-            if (request.Length > 200 || !isValidInput(request))
+            catch (Exception ex)
                 {
-                retval.errorMessage = "Invalid request.";
-                retval.status = false;
-                return retval;
+                return new JSONShape() { status = false, errorMessage = ex.Message };
                 }
-
-            // Create the shape request.
-            var sr = ShapeRequest.Parse(request, ref errMsg);
-            if (sr == null) // Couldn't parse the request.
-                {
-                retval.status = false;
-                retval.errorMessage = errMsg;
-                }
-            else
-                {
-                retval = sr.Emit(ref errMsg);
-
-                // Although we created the shape, we can't create the response for the client for some reason.
-                if (retval == null) retval = new Controllers.JSONShape() { status = false, errorMessage = errMsg };
-                }
-
-            return retval;
             }
 
         private static bool isValidInput(string request)

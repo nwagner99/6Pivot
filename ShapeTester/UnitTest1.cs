@@ -207,5 +207,28 @@ namespace ShapeTester
             Assert.IsTrue(retval.status);
             Assert.AreEqual(3, retval.points.Length);
             }
+
+        [TestMethod]
+        public void Test3D()
+            {
+            string s = "draw a cube with a side of 100";
+            var retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(retval.depth, 100);
+
+            s = "draw a sphere with a radius of 150";
+            retval = _control.GetShape(s);
+            Assert.IsTrue(retval.status);
+            Assert.AreEqual(150, retval.radius);
+
+            // Now some invalid ones.
+            s = "draw a cube with a radius of 100";
+            retval = _control.GetShape(s);
+            Assert.IsFalse(retval.status);
+
+            s = "draw a sphere with a side of 150";
+            retval = _control.GetShape(s);
+            Assert.IsFalse(retval.status);
+            }
         }
     }
