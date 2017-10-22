@@ -54,20 +54,14 @@
                         ctl.innerText = `Images larger than ${max} x ${max} pixels will be cropped.`;
                     }
                 });
-
-            //document.getElementById('history').addEventListener('input', function () {
-            //    chkInput();
-            //});
         });
 
         function parseRequest(ctl) {
             var url = 'api/Shapes/GetShape'
-            var ctl2 = document.getElementById('errMsg');
-            ctl2.hidden = true;
+            showError();
             var tb = document.getElementById('tbInput');
             if (!tb.value || tb.value == '') {
-                ctl2.value = "Please enter a valid shape request.";
-                ctl2.hidden = false;
+                showError("Please enter a valid shape request.");
                 return false;
             }
 
@@ -124,7 +118,7 @@
 
         function showError(msg) {
             var ctl2 = document.getElementById('errMsg');
-            ctl2.innerText = msg;
+            ctl2.innerText = msg ? msg : '';
         }
 
         function Draw(obj) {
@@ -173,10 +167,7 @@
             ctx.clearRect(0, 0, c.width, c.height);
             c = document.getElementById('errMsg');
             c.innerText = '';
-            if (input) {
-                $('#tbInput').val('');
-                $('#cmdDraw').prop('disabled', true);
-            }
+            if (input) $('#tbInput').val('');
             return true;
         }
 
@@ -184,13 +175,6 @@
         function getHistory(ctl) {
             var ctl1 = document.getElementById('tbInput');
             ctl1.value = ctl.value;
-            chkInput(ctl);
-        }
-
-        function chkInput(ctl) {
-            ctl = document.getElementById('tbInput');
-            var ctl2 = document.getElementById('cmdDraw');
-            ctl2.disabled = (ctl.value == '');
         }
 
         // Open or close the help dialog.
@@ -240,7 +224,7 @@
                 r += Math.PI / 4.0;
             }
             // Rotate the sphere to get some perspective.
-            p.rotate(0, 0, Math.PI/6.0);
+            p.rotate(0, 0, Math.PI / 6.0);
             p.render(canvas, { bgColor: 'whitesmoke', lineWidth: 0.5 });
         }
 
@@ -275,7 +259,7 @@
             min-width: 60px;
         }
     </style>
-    <form class="form" id="form1" runat="server">
+    <form class="form">
         <div>
             <img style="float: left;" src="http://www.sixpivot.com/wp-content/uploads/2015/07/sixpivot.png" alt="SixPivot Logo">
             <h2 style="float: left; padding-left: 10px; margin-top: 5px;">Shape Generator</h2>
@@ -292,10 +276,10 @@
         <br />
         <div style="padding-bottom: 5px;">
             <input type="text" id="tbInput" list="history" class="form-control" style="max-width: 80%;"
-                onkeyup="chkInput(this);" onchange="chkInput(this)" onfocus="chkInput(this);" placeholder="Describe the shape you want to draw..." />
-            <datalist id="history" onchange="chkInput(this);">
+                placeholder="Describe the shape you want to draw..." required autocomplete="off" />
+            <datalist id="history">
             </datalist>
-            <input type="submit" id="cmdDraw" class="btn btn-info" value="OK" disabled="disabled" onclick="parseRequest(this); return false;" />
+            <input type="submit" id="cmdDraw" class="btn btn-info" value="OK" onclick="parseRequest(this); return false;" />
             <input type="button" id="cmdClear" class="btn btn-info" value="Clear" onclick="return clearPage(true);" />
             <a onclick="showHelp();" href="#" class="glyphicon glyphicon-info-sign"></a>
             <br />
@@ -305,12 +289,12 @@
             <p>Examples:</p>
             <p class="tab">
                 <i>Draw a square with a height of 150&nbsp;</i><a class="glyphicon glyphicon-paste" href="#"
-                    onclick="document.getElementById('tbInput').value = 'Draw a square with a height of 150';chkInput(this);"></a>
+                    onclick="document.getElementById('tbInput').value = 'Draw a square with a height of 150';"></a>
             </p>
             <p class="tab">
                 <i>Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45&nbsp;</i>
                 <a class="glyphicon glyphicon-paste" href="#"
-                    onclick="document.getElementById('tbInput').value = 'Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45';chkInput(this);"></a>
+                    onclick="document.getElementById('tbInput').value = 'Draw an ellipse with an originx of 200 and an originy of 200 and a radiusx of 100 and a radiusy of 150 and a rotation of 45';"></a>
             </p>
             <p>Notes:</p>
             <p class="tab"><i>Requests are not case sensitive.</i></p>
